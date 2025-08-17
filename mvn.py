@@ -1,9 +1,16 @@
 import subprocess
 import sys
 import os
-import import_config
+from typing import List
 
-config = import_config.get_config()
-MAVEN_HOME_PATH = os.path.join(config.VERSION_TO_USE, "bin", "mvn")
-process = subprocess.run([MAVEN_HOME_PATH] + sys.argv[1:], check=True, capture_output=True, shell=True, text=True)
-print(process.stdout)
+def execute(path: str, commands: List[str]) -> str:
+    process = subprocess.run([path] + commands, capture_output=True, shell=True, text=True)
+    return process.stdout
+
+if __name__ == "__main__":
+    import import_config
+    config = import_config.get_config()
+    MAVEN_HOME_PATH = os.path.join(config.VERSION_TO_USE, "bin", "mvn")
+
+    output = execute(MAVEN_HOME_PATH, sys.argv[1:])
+    print(output)
