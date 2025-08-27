@@ -1,12 +1,12 @@
 import argparse
+import http.client
 import os
 import re
 import shutil
 import sys
-import http.client
-import urllib.request
 import urllib.error
-from typing import Set, Final, Any
+import urllib.request
+from typing import Final, Any
 from zipfile import ZipFile
 
 import import_config
@@ -23,19 +23,22 @@ if not os.path.exists(MAVEN_PATH):
     print(f"Maven path '{MAVEN_PATH}' does not exist")
     sys.exit(1)
 
-def scan_versions():
-    versions: Set[str] = set()
+def scan_versions() -> dict[str, str]:
+    versions: dict[str, str] = dict()
     with os.scandir(MAVEN_PATH) as it:
         for folder in it:
             mvn_path = os.path.join(folder.path, "bin", "mvn")
             is_executable = os.path.exists(mvn_path)
 
             if not is_executable: continue
-
-            command_output = mvn.execute(mvn_path, ["-v"])
-            version_line = command_output.splitlines()[0]
-            version = re.search(r"(\d+\.\d+\.\d+)", version_line).group(1)
-            versions.add(version)
+            match = re.search(r"apache-maven-(.+)", folder.name)
+            if match:
+                version = match.group(1)
+            else:
+                command_output = mvn.execute(mvn_path, ["-v"])
+                version_line = command_output.splitlines()[0]
+                version = re.search(r"(\d+\.\d+\.\d+)", version_line).group(1)
+            versions[version] = folder.path
     return versions
 
 def is_version_installed(version: str) -> bool:
@@ -50,8 +53,8 @@ def list_command(_):
 def install_command(args):
     version = args.version
     if is_version_installed(version):
-        print(f"version {version} is already installed")
-        return
+        print(f"version '{version}' is already installed")
+        return None
 
     error = None
     for url, folders in SERVERS.items():
@@ -65,19 +68,30 @@ def install_command(args):
             out_file: Any
             with urllib.request.urlopen(url) as response, open(filename, "wb") as out_file:
                 if response.status == http.HTTPStatus.OK:
-                    print(f"installing version {version}")
+                    print(f"installing version '{version}'")
                     shutil.copyfileobj(response, out_file)
                     with ZipFile(filename) as zipfile:
                         zipfile.extractall(config.MAVEN_PATH)
                     out_file.close()
                     os.remove(filename)
-                    print(f"successfully installed version {version}")
+                    print(f"successfully installed version '{version}'")
                     return None
         except Exception as ex:
             error = ex
 
     print(f"error installing version {version}")
     print(error)
+
+def remove_command(args):
+    version = args.version
+    installed_versions = scan_versions()
+    if not version in installed_versions:
+        print(f"version '{version}' is not installed")
+        return None
+    folder_path = installed_versions.get(version)
+    shutil.rmtree(folder_path)
+
+    print(f"successfully removed version '{version}'")
 
 parser = argparse.ArgumentParser("mvm")
 subparsers = parser.add_subparsers()
@@ -88,6 +102,10 @@ parser_list.set_defaults(func=list_command)
 parser_install = subparsers.add_parser("install", help="installs the provided maven version to the config.MAVEN_PATH directory")
 parser_install.add_argument("version", help="version to install")
 parser_install.set_defaults(func=install_command)
+
+parser_remove = subparsers.add_parser("remove", help="removes the provided maven version from the config.MAVEN_PATH directory")
+parser_remove.add_argument("version", help="version to remove")
+parser_remove.set_defaults(func=remove_command)
 
 if len(sys.argv) == 1:
     parser.print_help()
