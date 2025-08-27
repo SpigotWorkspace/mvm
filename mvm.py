@@ -84,6 +84,7 @@ def install_command(version):
 
     print(f"Error installing version {version}.")
     print(error)
+    sys.exit(1)
 
 def remove_command(version):
     installed_versions = scan_versions()
@@ -98,11 +99,14 @@ def remove_command(version):
 def use_command(version):
     installed_versions = scan_versions()
     if not version in installed_versions:
-        print(f"Version '{version}' is not installed.")
-        return None
-
+        print(f"Version '{version}' is not installed. Will be installed.")
+        print("---------------------")
+        install_command(version)
+        installed_versions = scan_versions()
+        print("---------------------")
     folder_path = installed_versions.get(version)
     config.VERSION_TO_USE = folder_path
+    import_config.save_config(config)
 
     print(f"Version {version} will now be used.")
 
