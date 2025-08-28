@@ -1,3 +1,3 @@
 call .venv/Scripts/activate.bat
-pyinstaller --clean --onefile mvm.py
-pyinstaller --clean --onefile mvn.py
+pyinstaller --clean specfiles/mvm.spec
+pyinstaller --clean specfiles/mvn.spec
