@@ -1,6 +1,6 @@
 import subprocess
 import sys
-import os
+from pathlib import Path
 from typing import List
 
 def execute(path: str, commands: List[str]) -> str:
@@ -13,13 +13,14 @@ if __name__ == "__main__":
     if not config.VERSION_TO_USE:
         print("No default version set. Please use 'mvm use' to select a default version.")
         sys.exit(1)
-    MAVEN_HOME_PATH = os.path.join(config.VERSION_TO_USE, "bin", "mvn")
-    if not os.path.exists(MAVEN_HOME_PATH):
+
+    _MAVEN_EXECUTABLE = Path(config.VERSION_TO_USE) / "bin" / "mvn"
+    if not _MAVEN_EXECUTABLE.exists():
         print(
-            f"Command cannot be executed because '{MAVEN_HOME_PATH}' does not exist.\n"
+            f"Command cannot be executed because '{_MAVEN_EXECUTABLE}' does not exist.\n"
             f"Please use 'mvm use' to select a valid version."
         )
         sys.exit(1)
 
-    output = execute(MAVEN_HOME_PATH, sys.argv[1:])
+    output = execute(str(_MAVEN_EXECUTABLE), sys.argv[1:])
     print(output)

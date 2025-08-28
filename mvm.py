@@ -19,27 +19,26 @@ _SERVERS: Final = {
     "https://archive.apache.org/dist/maven/binaries/": False
 }
 _config: Final = import_config.get_config()
-_MAVEN_PATH: Final = _config.MAVEN_PATH
-if not os.path.exists(_MAVEN_PATH):
+_MAVEN_PATH: Final = Path(_config.MAVEN_PATH)
+if not _MAVEN_PATH.exists():
     print(f"Maven path '{_MAVEN_PATH}' does not exist")
     sys.exit(1)
 
 def scan_versions() -> dict[str, str]:
     versions: dict[str, str] = dict()
-    with os.scandir(_MAVEN_PATH) as it:
-        for folder in it:
-            mvn_path = os.path.join(folder.path, "bin", "mvn")
-            is_executable = os.path.exists(mvn_path)
+    folder: Path
+    for folder in _MAVEN_PATH.iterdir():
+        mvn_path = folder / "bin" / "mvn"
+        if not mvn_path.exists(): continue
 
-            if not is_executable: continue
-            match: re.Match[str] = re.search(r"apache-maven-(.+)", folder.name)
-            if match:
-                version = match.group(1)
-            else:
-                command_output = mvn.execute(mvn_path, ["-v"])
-                version_line = command_output.splitlines()[0]
-                version = re.search(r"(\d+\.\d+\.\d+)", version_line).group(1)
-            versions[version] = folder.path
+        match: re.Match[str] = re.search(r"apache-maven-(.+)", folder.name)
+        if match:
+            version = match.group(1)
+        else:
+            command_output = mvn.execute(str(mvn_path), ["-v"])
+            version_line = command_output.splitlines()[0]
+            version = re.search(r"^Apache\sMaven\s(\S+)", version_line).group(1)
+        versions[version] = str(folder)
     return versions
 
 def is_version_installed(version: str) -> bool:
