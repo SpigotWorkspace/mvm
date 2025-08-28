@@ -2,7 +2,7 @@
 
 
 a = Analysis(
-    ['..\\mvm.py'],
+    ['../mvm.py'],
     pathex=[],
     binaries=[],
     datas=[],

@@ -2,7 +2,7 @@
 
 
 a = Analysis(
-    ['..\\mvn.py'],
+    ['../mvn.py'],
     pathex=[],
     binaries=[],
     datas=[],
