@@ -6,26 +6,27 @@ import shutil
 import sys
 import urllib.error
 import urllib.request
+from pathlib import Path
 from typing import Final, Any
 from zipfile import ZipFile
 
 import import_config
 import mvn
 
-SERVERS: Final = {
+_SERVERS: Final = {
     "https://archive.apache.org/dist/maven/maven-4/": True,
     "https://archive.apache.org/dist/maven/maven-3/": True,
     "https://archive.apache.org/dist/maven/binaries/": False
 }
-config = import_config.get_config()
-MAVEN_PATH = config.MAVEN_PATH
-if not os.path.exists(MAVEN_PATH):
-    print(f"Maven path '{MAVEN_PATH}' does not exist")
+_config: Final = import_config.get_config()
+_MAVEN_PATH: Final = _config.MAVEN_PATH
+if not os.path.exists(_MAVEN_PATH):
+    print(f"Maven path '{_MAVEN_PATH}' does not exist")
     sys.exit(1)
 
 def scan_versions() -> dict[str, str]:
     versions: dict[str, str] = dict()
-    with os.scandir(MAVEN_PATH) as it:
+    with os.scandir(_MAVEN_PATH) as it:
         for folder in it:
             mvn_path = os.path.join(folder.path, "bin", "mvn")
             is_executable = os.path.exists(mvn_path)
@@ -49,7 +50,7 @@ def list_command(_):
     versions = scan_versions()
     for version, folder_path in versions.items():
         string = f"- {version}"
-        if folder_path == config.VERSION_TO_USE:
+        if folder_path == _config.VERSION_TO_USE:
             string += " (default)"
 
         print(string)
@@ -60,7 +61,7 @@ def install_command(version):
         return None
 
     error = None
-    for url, folders in SERVERS.items():
+    for url, folders in _SERVERS.items():
         filename = f"apache-maven-{version}-bin.zip"
         if folders:
             url += f"{version}/binaries/"
@@ -69,20 +70,21 @@ def install_command(version):
         try:
             response: http.client.HTTPResponse
             out_file: Any
-            with urllib.request.urlopen(url) as response, open(filename, "wb") as out_file:
+            zip_path = Path(import_config.BASE_DIR / filename)
+            with urllib.request.urlopen(url) as response, open(zip_path, "wb") as out_file:
                 if response.status == http.HTTPStatus.OK:
                     print(f"Installing version '{version}'.")
                     shutil.copyfileobj(response, out_file)
-                    with ZipFile(filename) as zipfile:
-                        zipfile.extractall(config.MAVEN_PATH)
                     out_file.close()
-                    os.remove(filename)
+                    with ZipFile(zip_path) as zipfile:
+                        zipfile.extractall(_config.MAVEN_PATH)
+                    os.remove(zip_path)
                     print(f"Successfully installed version '{version}'.")
                     return None
         except Exception as ex:
             error = ex
 
-    print(f"Error installing version {version}.")
+    print(f"Error installing version '{version}'.")
     print(error)
     sys.exit(1)
 
@@ -105,8 +107,8 @@ def use_command(version):
         installed_versions = scan_versions()
         print("---------------------")
     folder_path = installed_versions.get(version)
-    config.VERSION_TO_USE = folder_path
-    import_config.save_config(config)
+    _config.VERSION_TO_USE = folder_path
+    import_config.save_config(_config)
 
     print(f"Version {version} will now be used.")
 

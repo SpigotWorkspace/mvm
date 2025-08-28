@@ -1,15 +1,17 @@
 import sys
 import json
 import os.path
+from pathlib import Path
 from typing import Final, Dict, Any
 
 if getattr(sys, "frozen", False):
     sys.path.insert(0, os.path.dirname(sys.executable))
 
-FILE_PATH: Final = os.path.join(sys.path[0], "config.json")
+BASE_DIR = Path(sys.path[0])
+_FILE_PATH: Final = BASE_DIR / "config.json"
 
-if not os.path.exists(FILE_PATH):
-    with open(FILE_PATH, "w") as f:
+if not _FILE_PATH.exists():
+    with open(_FILE_PATH, "w") as f:
         f.write("{}")
 
 class Config:
@@ -21,7 +23,7 @@ class Config:
         return dict(MAVEN_PATH = self.MAVEN_PATH, VERSION_TO_USE = self.VERSION_TO_USE)
 
 def get_config() -> Config:
-    with open(FILE_PATH, "r") as file:
+    with open(_FILE_PATH, "r") as file:
         config = json.loads(file.read(), object_hook=lambda data: Config(data))
 
     if not config.MAVEN_PATH:
@@ -32,5 +34,5 @@ def get_config() -> Config:
 
 def save_config(config: Config):
     file: Any
-    with open(FILE_PATH, "w") as file:
+    with open(_FILE_PATH, "w") as file:
         json.dump(config.as_dict(), file, indent=4, sort_keys=True)
