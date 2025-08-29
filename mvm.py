@@ -119,14 +119,14 @@ def use_command(version):
 parser = argparse.ArgumentParser("mvm")
 subparsers = parser.add_subparsers()
 
-parser_list = subparsers.add_parser("list", help="Lists all installed versions under config.MAVEN_PATH")
+parser_list = subparsers.add_parser("list", help=f"Lists all installed versions under {_config.MAVEN_PATH}")
 parser_list.set_defaults(func=list_command)
 
-parser_install = subparsers.add_parser("install", help="Installs the provided maven version to the config.MAVEN_PATH directory")
+parser_install = subparsers.add_parser("install", help=f"Installs the provided maven version to {_config.MAVEN_PATH}")
 parser_install.add_argument("version", help="Version to install")
 parser_install.set_defaults(func=install_command)
 
-parser_remove = subparsers.add_parser("remove", help="Removes the provided maven version from the config.MAVEN_PATH directory")
+parser_remove = subparsers.add_parser("remove", help=f"Removes the provided maven version from {_config.MAVEN_PATH}")
 parser_remove.add_argument("version", help="Version to remove")
 parser_remove.set_defaults(func=remove_command)
 
