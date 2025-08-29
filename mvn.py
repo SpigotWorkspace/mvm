@@ -1,10 +1,14 @@
+import os
 import subprocess
 import sys
 from pathlib import Path
 from typing import List
 
 def execute(path: str, commands: List[str]) -> str:
-    process = subprocess.run([path] + commands, capture_output=True, shell=True, text=True)
+    if os.name == "nt":
+        process = subprocess.run([path] + commands, capture_output=True, shell=True, text=True)
+    else:
+        process = subprocess.run([path] + commands, capture_output=True, text=True)
     return process.stdout
 
 if __name__ == "__main__":
