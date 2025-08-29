@@ -1,3 +1,4 @@
+_VERSION = "1.0.0"
 import argparse
 import http.client
 import os
@@ -117,6 +118,7 @@ def use_command(version):
     print(f"Version {version} will now be used.")
 
 parser = argparse.ArgumentParser("mvm")
+parser.add_argument("-v", "--version", help="prints the installed mvm version", action="version", version=_VERSION)
 subparsers = parser.add_subparsers()
 
 parser_list = subparsers.add_parser("list", help=f"Lists all installed versions under {_config.MAVEN_PATH}")
