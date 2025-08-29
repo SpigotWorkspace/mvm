@@ -7,10 +7,14 @@ from typing import Final, Dict, Any
 if getattr(sys, "frozen", False):
     sys.path.insert(0, os.path.dirname(sys.executable))
 
-BASE_DIR = Path(sys.path[0])
-_FILE_PATH: Final = BASE_DIR / "config.json"
-
+if os.name == "nt":
+    CONFIG_DIR = Path(os.environ.get("APPDATA", Path.home() / "AppData" / "Roaming"))
+else:
+    CONFIG_DIR = Path(Path.home() / ".config")
+CONFIG_DIR = CONFIG_DIR / "mvm"
+_FILE_PATH: Final = CONFIG_DIR / "config.json"
 if not _FILE_PATH.exists():
+    _FILE_PATH.parent.mkdir(parents=True, exist_ok=True)
     with open(_FILE_PATH, "w") as f:
         f.write("{}")
 

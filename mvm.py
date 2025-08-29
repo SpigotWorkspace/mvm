@@ -22,6 +22,9 @@ _config: Final = import_config.get_config()
 _MAVEN_PATH: Final = Path(_config.MAVEN_PATH)
 if not _MAVEN_PATH.exists():
     print(f"Maven path '{_MAVEN_PATH}' does not exist")
+    _config.MAVEN_PATH = None
+    import_config.save_config(_config)
+    import_config.get_config()
     sys.exit(1)
 
 def scan_versions() -> dict[str, str]:
@@ -69,7 +72,7 @@ def install_command(version):
         try:
             response: http.client.HTTPResponse
             out_file: Any
-            zip_path = Path(import_config.BASE_DIR / filename)
+            zip_path = Path(import_config.CONFIG_DIR / filename)
             with urllib.request.urlopen(url) as response, open(zip_path, "wb") as out_file:
                 if response.status == http.HTTPStatus.OK:
                     print(f"Installing version '{version}'.")
@@ -78,6 +81,8 @@ def install_command(version):
                     with ZipFile(zip_path) as zipfile:
                         zipfile.extractall(_config.MAVEN_PATH)
                     os.remove(zip_path)
+                    if os.name == "posix":
+                        os.system(f"chmod -R u+x {Path(_config.MAVEN_PATH) / f"apache-maven-{version}"}")
                     print(f"Successfully installed version '{version}'.")
                     return None
         except Exception as ex:
